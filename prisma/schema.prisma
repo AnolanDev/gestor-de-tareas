@@ -1,10 +1,10 @@
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "sqlite"
   url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
 }
 
 enum Status {
@@ -20,12 +20,10 @@ enum Priority {
 }
 
 model Todo {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   title     String
-  status    Status   @default(PENDING)
-  priority  Priority @default(MEDIUM)
-  createdAt DateTime @default(now())
+  status    Status    @default(PENDING)
+  priority  Priority  @default(MEDIUM)
+  createdAt DateTime  @default(now())
+  dueDate   DateTime? // ← nuevo campo opcional
 }
-
-
-

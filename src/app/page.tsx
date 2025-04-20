@@ -9,105 +9,131 @@ import {
   updateTodoTitle,
   updateTodoStatus,
   updateTodoPriority,
+  updateTodoDueDate,
 } from '@/services/TodoService';
 import TodoForm from '@/components/TodoForm';
-import TodoList from '@/components/TodoList';
 import TodoFilters from '@/components/TodoFilters';
+import TodoList from '@/components/TodoList';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 export default function HomePage() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<Todo['status'] | 'ALL'>('ALL');
   const [selectedPriority, setSelectedPriority] = useState<Todo['priority'] | 'ALL'>('ALL');
-  const [search, setSearch] = useState('');
+  const [query, setQuery] = useState('');
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [toDeleteId, setToDeleteId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchTodos({ status: selectedStatus, priority: selectedPriority, search })
+    fetchTodos({ status: selectedStatus, priority: selectedPriority, query })
       .then(setTodos)
       .catch((err) => console.error('Error al obtener tareas:', err));
-  }, [selectedStatus, selectedPriority, search]);
+  }, [selectedStatus, selectedPriority, query]);
 
   const handleAddTodo = async (title: string) => {
     try {
       const newTodo = await createTodo(title);
       setTodos([newTodo, ...todos]);
-    } catch (error) {
-      console.error('Error al crear tarea:', error);
+    } catch (e) {
+      console.error('Error al crear tarea:', e);
     }
   };
 
-  const handleDelete = async (id: number) => {
+  // En lugar de confirm(): abrimos el modal
+  const askDelete = (id: number) => {
+    setToDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (toDeleteId === null) return;
     try {
-      await deleteTodo(id);
-      setTodos(todos.filter((todo) => todo.id !== id));
-    } catch (error) {
-      console.error('Error al eliminar tarea:', error);
+      await deleteTodo(toDeleteId);
+      setTodos((t) => t.filter((x) => x.id !== toDeleteId));
+    } catch (e) {
+      console.error('Error al eliminar tarea:', e);
+    } finally {
+      setConfirmOpen(false);
+      setToDeleteId(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmOpen(false);
+    setToDeleteId(null);
   };
 
   const handleEdit = async (id: number, title: string) => {
     try {
       const updated = await updateTodoTitle(id, title);
-      setTodos(todos.map((todo) => (todo.id === id ? updated : todo)));
-    } catch (error) {
-      console.error('Error al editar tarea:', error);
+      setTodos((t) => t.map((x) => (x.id === id ? updated : x)));
+    } catch (e) {
+      console.error('Error al editar tarea:', e);
     }
   };
 
   const handleStatusChange = async (id: number, status: Todo['status']) => {
     try {
       const updated = await updateTodoStatus(id, status);
-      setTodos(todos.map((todo) => (todo.id === id ? updated : todo)));
-    } catch (error) {
-      console.error('Error al cambiar estado:', error);
+      setTodos((t) => t.map((x) => (x.id === id ? updated : x)));
+    } catch (e) {
+      console.error('Error al cambiar estado:', e);
     }
   };
 
   const handlePriorityChange = async (id: number, priority: Todo['priority']) => {
     try {
       const updated = await updateTodoPriority(id, priority);
-      setTodos(todos.map((todo) => (todo.id === id ? updated : todo)));
-    } catch (error) {
-      console.error('Error al cambiar prioridad:', error);
+      setTodos((t) => t.map((x) => (x.id === id ? updated : x)));
+    } catch (e) {
+      console.error('Error al cambiar prioridad:', e);
+    }
+  };
+
+  const handleDueDateChange = async (id: number, dueDate: string) => {
+    try {
+      const updated = await updateTodoDueDate(id, dueDate);
+      setTodos((t) => t.map((x) => (x.id === id ? updated : x)));
+    } catch (e) {
+      console.error('Error al actualizar vencimiento:', e);
     }
   };
 
   return (
-    <main className="w-full max-w-[1400px] mx-auto px-4 py-10">
-      {/* Encabezado */}
-      <header className="mb-8 text-center">
-        <h1 className="text-4xl font-extrabold text-gray-800 tracking-tight mb-2">
-          📝 Gestión de Tareas
-        </h1>
-        <p className="text-sm text-gray-500">Organiza, prioriza y completa tus pendientes</p>
-      </header>
+    <main className="homepage__container w-full max-w-[1600px] mx-auto px-4 py-10">
 
-      {/* Formulario para nueva tarea */}
-      <section aria-label="Agregar nueva tarea">
+      {/* … Encabezado, TodoForm, TodoFilters … */}
+      <section className="mb-6">
         <TodoForm onAdd={handleAddTodo} />
       </section>
 
-      {/* Filtros */}
-      <section className="mt-6" aria-label="Filtros de búsqueda">
+      <section className="mb-10">
         <TodoFilters
           selectedStatus={selectedStatus}
           selectedPriority={selectedPriority}
           onStatusChange={setSelectedStatus}
           onPriorityChange={setSelectedPriority}
-          search={search}
-          onSearchChange={setSearch}
+          query={query}
+          onQueryChange={setQuery}
         />
       </section>
 
-      {/* Lista de tareas */}
-      <section className="mt-10" aria-label="Listado de tareas">
-        <TodoList
-          todos={todos}
-          onDelete={handleDelete}
-          onEdit={handleEdit}
-          onStatusChange={handleStatusChange}
-          onPriorityChange={handlePriorityChange}
-        />
-      </section>
+      <TodoList
+        todos={todos}
+        onDelete={askDelete}                    // ← usar askDelete
+        onEdit={handleEdit}
+        onStatusChange={handleStatusChange}
+        onPriorityChange={handlePriorityChange}
+        onDueDateChange={handleDueDateChange}
+      />
+
+      {/* Modal de confirmación */}
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        message="¿Estás seguro de eliminar esta tarea?"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
     </main>
   );
 }

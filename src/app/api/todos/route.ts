@@ -1,29 +1,19 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { Status, Priority } from '@prisma/client'; // 👈 Asegúrate de importar los enums
+import { Status, Priority } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') as Status | 'ALL' | null;
     const priority = searchParams.get('priority') as Priority | 'ALL' | null;
-    const search = searchParams.get('search');
+    const query = searchParams.get('query');
 
-    const where: any = {}; // Usamos 'any' para construir el objeto dinámicamente
-
-    if (status && status !== 'ALL') {
-      where.status = status as Status;
-    }
-
-    if (priority && priority !== 'ALL') {
-      where.priority = priority as Priority;
-    }
-
-    if (search) {
-      where.title = {
-        contains: search,
-        mode: 'insensitive',
-      };
+    const where: any = {};
+    if (status && status !== 'ALL')    where.status   = status;
+    if (priority && priority !== 'ALL') where.priority = priority;
+    if (query) {
+      where.title = { contains: query, mode: 'insensitive' };
     }
 
     const todos = await prisma.todo.findMany({
@@ -38,12 +28,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
-
-// POST: crear nueva tarea
 export async function POST(request: NextRequest) {
   try {
     const { title } = await request.json();
-
     if (!title || typeof title !== 'string') {
       return NextResponse.json({ error: 'Título inválido' }, { status: 400 });
     }
@@ -53,6 +40,7 @@ export async function POST(request: NextRequest) {
         title,
         status: 'PENDING',
         priority: 'MEDIUM',
+        // dueDate se añadirá más adelante en otra ruta PATCH
       },
     });
 

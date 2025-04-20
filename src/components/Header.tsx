@@ -1,50 +1,67 @@
-'use client';
+// src/components/Header.tsx
+'use client'
 
-import Link from 'next/link';
-import { useState } from 'react';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useState } from 'react'
+import Link from 'next/link'
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 
 export default function Header() {
-  const [open, setOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <header className="bg-white shadow sticky top-0 z-50 border-b">
-      <div className="max-w-[1400px] mx-auto px-4 py-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-blue-600 tracking-tight">
-          📝 Mi Lista de Tareas
-        </h1>
+    <header className="bg-white text-blue-900 shadow-sm border-b border-gray-200 ">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between h-16 items-center">
+        <Link href="/" className="text-2xl font-semibold text-blue-600">
+          📝 Lista de tareas
+        </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex gap-6 text-sm font-medium text-gray-700">
-          <Link href="/" className="hover:text-blue-600 transition-colors">Inicio</Link>
+        <nav className="hidden sm:flex space-x-6">
+          <Link href="/" className="text-gray-700 hover:text-blue-600 transition">
+            Inicio
+          </Link>
+          <Link href="/tasks" className="text-gray-700 hover:text-blue-600 transition">
+            Tareas
+          </Link>
+          <Link href="/about" className="text-gray-700 hover:text-blue-600 transition">
+            Acerca
+          </Link>
         </nav>
 
         {/* Mobile menu button */}
         <button
-          className="md:hidden text-gray-700 hover:text-blue-600 transition"
-          onClick={() => setOpen(!open)}
+          className="sm:hidden p-2 rounded-md text-gray-600 hover:text-blue-600 hover:bg-gray-100 transition"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Abrir menú"
         >
-          {open ? <XMarkIcon className="h-6 w-6" /> : <Bars3Icon className="h-6 w-6" />}
+          {mobileMenuOpen ? (
+            <XMarkIcon className="h-6 w-6" />
+          ) : (
+            <Bars3Icon className="h-6 w-6" />
+          )}
         </button>
       </div>
 
-      {/* Mobile nav */}
-      <div
-        className={`overflow-hidden transition-all duration-300 md:hidden ${
-          open ? 'max-h-40' : 'max-h-0'
-        }`}
-      >
-        <div className="bg-white px-4 pb-4 border-t">
-          <Link
-            href="/"
-            className="block py-2 text-sm text-gray-700 hover:text-blue-600 transition"
-            onClick={() => setOpen(false)}
-          >
-            Inicio
-          </Link>
-        </div>
-      </div>
+      {mobileMenuOpen && (
+        <nav className="sm:hidden bg-white border-t border-gray-200">
+          <div className="px-2 pt-2 pb-3 space-y-1">
+            {[
+              { href: '/', label: 'Inicio' },
+              { href: '/tasks', label: 'Tareas' },
+              { href: '/about', label: 'Acerca' },
+            ].map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-100 transition"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+        </nav>
+      )}
     </header>
-  );
+  )
 }
